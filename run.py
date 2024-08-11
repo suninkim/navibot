@@ -1,10 +1,10 @@
-from env import CassiEnv
-from algo import PPO
 import argparse
+
 import torch
-
 import yaml
+from env import CassiEnv
 
+from algo import PPO
 
 # Read training config
 

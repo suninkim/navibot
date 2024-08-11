@@ -1,0 +1,152 @@
+<mujoco>
+    <compiler inertiafromgeom="auto" angle="degree" coordinate="local" meshdir="meshes"/>
+    <include file="asset.xml"/>
+
+    <default>
+        <!-- <joint limited="false" armature="0.01" frictionloss="0.1" damping="0.1"/> -->
+        <joint limited="false" armature="0.01" frictionloss="10" damping="10"/>
+        <site type="sphere" rgba="1 0 0 0.3" size="0.01"/>
+        <geom rgba=".55 .55 .55 1" contype="0" conaffinity="0" density="100"/>
+        <equality solref="0.0002 1" solimp="0.99 0.99 0.0001"/>
+        <general ctrlrange="-100 100" ctrllimited="true"/>
+        
+        <default class="motor">
+            <motor ctrllimited="true" ctrlrange="-100 100" gear="1"/>
+        </default>
+        <default class="collision">
+            <geom contype="1" conaffinity="1" condim="3" margin="0" gap="0" rgba="0.4 .1 0.1 0.3" mass="0"/>
+        </default>
+
+    </default>
+
+    <option timestep="0.0002" iterations="50" solver="PGS" gravity="0 0 -9.81">
+        <!-- <flag energy="enable" gravity="enable"/> -->
+        <flag energy="enable" gravity="disable"/>
+    </option>
+
+    <worldbody>
+        <geom name="floor" pos="0 0 -0.01" size="0 0 .01" type="plane" material="grid" contype="1" conaffinity="1"/>
+        <light pos="0 0 2.5" dir="0 0 -1" diffuse=".8 .8 .8" specular=".2 .2 .2" directional="true"/>
+        <light pos="0 0 2" dir="0 0 -1" diffuse=".8 .8 .8" specular=".2 .2 .2" directional="true"/>
+        <light pos="5 0 2" dir="-1 0 0" diffuse=".8 .8 .8" specular=".2 .2 .2" directional="true"/>
+        <light pos="-5 0 2" dir="1 0 0" diffuse=".8 .8 .8" specular=".2 .2 .2" directional="true"/>
+        <light pos="0 0 1.5" dir="0 0 -1" diffuse=".8 .8 .8" specular=".2 .2 .2" directional="true"/>
+
+
+        <!-- <body name="random stick" pos="0 0 0.3" euler="0 90 0">
+            <joint type="free"/>
+            <geom class="collision" type="capsule" pos="0 -0.1 0" size="0.01 0.1" xyaxes="1 0 0 0 1 0" mass="100"/>
+        </body> -->
+
+        <body name="base" pos="0 0 0.3685" euler="0 0 0">
+            <!-- <joint type="free"/> -->
+            <geom name="top_base" type="mesh" mesh="top_base" mass="100"/>
+            <geom name="left_GSA_motor" pos="-0.037 0 -0.045" xyaxes="1 0 0 0 0 1" type="mesh" mesh="GSA_motor" mass="1"/>
+            <geom name="right_GSA_motor" pos="0.037 0 -0.045" xyaxes="1 0 0 0 0 1" type="mesh" mesh="GSA_motor" mass="1"/>
+            
+            <geom class="collision" type="cylinder" pos="-0.037 0 -0.022" size="0.04 0.025" xyaxes="1 0 0 0 1 0"/>
+            <geom class="collision" type="cylinder" pos="0.037 0 -0.022" size="0.04 0.025" xyaxes="1 0 0 0 1 0"/>
+
+            <!-- LEFT -->
+            <body name="left_leg1" pos="-0.037 -0.01375 -0.095" euler="0 0 0">
+                <geom name="left_leg1" type="mesh" mesh="leg1" mass="1"/>
+                <joint name="joint_left_leg1" type="hinge" pos="0 0.01375 0" axis="0 0 1" limited="true" range="-45 45"/>
+
+                <geom class="collision" type="cylinder" pos="0 0.01375 0.035" size="0.022 0.01" xyaxes="1 0 0 0 1 0"/>
+                <geom class="collision" type="cylinder" pos="0 0.015 0" size="0.031 0.028" xyaxes="1 0 0 0 0 1"/>
+
+                <body name="left_leg2" pos="0.0115 0.01375 0" euler="0 0 0">
+                    <geom name="left_leg2" type="mesh" mesh="leg2" mass="1"/>
+                    <joint name="joint_left_leg12" type="hinge" pos="0 0 0" axis="0 1 0" limited="true" range="-10 50"/>
+                    <joint name="joint_left_leg2" type="hinge" pos="0 0 0" axis="-1 0 0" limited="true" range="-170 170"/>
+                    
+                    <geom class="collision" type="cylinder" pos="-0.068 0 0" size="0.04 0.021" xyaxes="0 0 1 0 1 0"/>
+                    <geom class="collision" type="capsule" pos="-0.06525 0 -0.05" size="0.01 0.01" xyaxes="1 0 0 0 1 0"/>
+                    <geom class="collision" type="cylinder" pos="-0.06 0 -0.1" size="0.04 0.021" xyaxes="0 0 1 0 1 0"/>
+                    <geom class="collision" type="cylinder" pos="-0.033 0 -0.1" size="0.006 0.006" xyaxes="0 0 1 0 1 0"/>
+
+                    <body name="left_leg3" pos="0 0 -0.1" euler="0 0 0">
+                        <geom name="left_leg3" type="mesh" mesh="leg3" mass="1"/>
+                        <joint name="joint_left_leg3" type="hinge" pos="0 0 0" axis="1 0 0" limited="true" range="0 130"/>
+
+                        <geom class="collision" type="capsule" pos="-0.06525 0 -0.05" size="0.01 0.01" xyaxes="1 0 0 0 1 0"/>
+                        <geom class="collision" type="cylinder" pos="-0.06 0 -0.1" size="0.04 0.021" xyaxes="0 0 1 0 1 0"/>
+                        <geom class="collision" type="cylinder" pos="-0.033 0 -0.1" size="0.006 0.006" xyaxes="0 0 1 0 1 0"/>
+
+                        <body name="left_foot" pos="-0.06525 0 -0.1" euler="0 0 0">
+                            <geom name="left_foot" type="mesh" mesh="foot" mass="1"/>
+                            <geom name="left_sole" type="mesh" pos="0 0 -0.06850" mesh="sole" rgba="0.2 0.2 0.3 1" mass="1"/>
+                            <joint name="joint_left_foot" type="hinge" pos="0 0 0" axis="1 0 0" limited="true" range="-65 80"/>
+                            
+                            <geom class="collision" type="box" pos="0 0 -0.053" size="0.022 0.03 0.012"/>
+                            <geom class="collision" type="capsule" pos="0 0.034 -0.06850" size="0.006 0.017" xyaxes="0 0 1 0 1 0"/>
+                            <geom class="collision" type="capsule" pos="0 -0.074 -0.06850" size="0.006 0.017" xyaxes="0 0 1 0 1 0"/>
+                            <geom class="collision" type="capsule" pos="0.017 -0.02 -0.06850" size="0.006 0.054" xyaxes="1 0 0 0 0 1"/>
+                            <geom class="collision" type="capsule" pos="-0.017 -0.02 -0.06850" size="0.006 0.054" xyaxes="1 0 0 0 0 1"/>
+                        </body>
+                    </body>
+                </body>
+            </body>
+
+            <!-- RIGHT -->
+            <body name="right_leg1" pos="0.037 0.01375 -0.095" xyaxes="-1 0 0 0 -1 0">
+                <geom name="right_leg1" type="mesh" mesh="leg1" mass="1"/>
+                <joint name="joint_right_leg1" type="hinge" pos="0 0.01375 0" axis="0 0 1" limited="true" range="-45 45"/>
+                
+                <geom class="collision" type="cylinder" pos="0 0.01375 0.035" size="0.022 0.01" xyaxes="1 0 0 0 1 0"/>
+                <geom class="collision" type="cylinder" pos="0 0.015 0" size="0.031 0.028" xyaxes="1 0 0 0 0 1"/>
+
+                <body name="right_leg2" pos="0.0115 0.01375 0" euler="0 0 0">
+                    <geom name="right_leg2" type="mesh" mesh="leg2" mass="1"/>
+                    <joint name="joint_right_leg12" type="hinge" pos="0 0 0" axis="0 -1 0" limited="true" range="-10 50"/>
+                    <joint name="joint_right_leg2" type="hinge" pos="0 0 0" axis="-1 0 0" limited="true" range="-170 170"/>
+                    
+                    <geom class="collision" type="cylinder" pos="-0.068 0 0" size="0.04 0.021" xyaxes="0 0 1 0 1 0"/>
+                    <geom class="collision" type="capsule" pos="-0.06525 0 -0.05" size="0.01 0.01" xyaxes="1 0 0 0 1 0"/>
+                    <geom class="collision" type="cylinder" pos="-0.06 0 -0.1" size="0.04 0.021" xyaxes="0 0 1 0 1 0"/>
+                    <geom class="collision" type="cylinder" pos="-0.033 0 -0.1" size="0.006 0.006" xyaxes="0 0 1 0 1 0"/>
+
+                    <body name="right_leg3" pos="0 0 -0.1" euler="0 0 0">
+                        <geom name="right_leg3" type="mesh" mesh="leg3" mass="1"/>
+                        <joint name="joint_right_leg3" type="hinge" pos="0 0 0" axis="1 0 0" limited="true" range="0 130"/>
+                        
+                        <geom class="collision" type="capsule" pos="-0.06525 0 -0.05" size="0.01 0.01" xyaxes="1 0 0 0 1 0"/>
+                        <geom class="collision" type="cylinder" pos="-0.06 0 -0.1" size="0.04 0.021" xyaxes="0 0 1 0 1 0"/>
+                        <geom class="collision" type="cylinder" pos="-0.033 0 -0.1" size="0.006 0.006" xyaxes="0 0 1 0 1 0"/>
+
+                        <body name="right_foot" pos="-0.06525 0 -0.1" euler="0 0 0">
+                            <geom name="right_foot" type="mesh" xyaxes="-1 0 0 0 -1 0" mesh="foot" mass="1"/>
+                            <geom name="right_sole" type="mesh" pos="0 0 -0.06850" xyaxes="-1 0 0 0 -1 0" mesh="sole" rgba="0.2 0.2 0.3 1" mass="1"/>
+                            <joint name="joint_right_foot" type="hinge" pos="0 0 0" axis="1 0 0" limited="true" range="-65 80"/>
+                            
+                            <geom class="collision" type="box" pos="0 0 -0.053" size="0.022 0.03 0.012"/>
+                            <geom class="collision" type="capsule" pos="0 -0.034 -0.06850" size="0.006 0.017" xyaxes="0 0 1 0 1 0"/>
+                            <geom class="collision" type="capsule" pos="0 0.074 -0.06850" size="0.006 0.017" xyaxes="0 0 1 0 1 0"/>
+                            <geom class="collision" type="capsule" pos="0.017 0.02 -0.06850" size="0.006 0.054" xyaxes="1 0 0 0 0 1"/>
+                            <geom class="collision" type="capsule" pos="-0.017 0.02 -0.06850" size="0.006 0.054" xyaxes="1 0 0 0 0 1"/>
+                        </body>
+                    </body>
+                </body>
+            </body>
+
+        </body>
+
+
+    </worldbody>
+
+    <actuator>
+        <general name="m_left_leg1" joint="joint_left_leg1" class="motor"/>
+        <general name="m_left_leg12" joint="joint_left_leg12" class="motor"/>
+        <general name="m_left_leg2" joint="joint_left_leg2" class="motor"/>
+        <general name="m_left_leg3" joint="joint_left_leg3" class="motor"/>
+        <general name="m_left_foot" joint="joint_left_foot" class="motor"/>
+        
+        <general name="m_right_leg1" joint="joint_right_leg1" class="motor"/>
+        <general name="m_right_leg12" joint="joint_right_leg12" class="motor"/>
+        <general name="m_right_leg2" joint="joint_right_leg2" class="motor"/>
+        <general name="m_right_leg3" joint="joint_right_leg3" class="motor"/>
+        <general name="m_right_foot" joint="joint_right_foot" class="motor"/>
+    </actuator>
+
+
+</mujoco>
