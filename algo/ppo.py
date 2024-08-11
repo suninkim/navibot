@@ -26,7 +26,7 @@ from tqdm import tqdm
 
 
 class PPO:
-    def __init__(self):
+    def __init__(self, train_cfg, env):
 
         is_fork = multiprocessing.get_start_method() == "fork"
         self.device = (
@@ -35,19 +35,23 @@ class PPO:
             else torch.device("cpu")
         )
 
-        num_cells = 256
-        lr = 3e-4
-        self.max_grad_norm = 1.0
+        self.train_cfg = train_cfg
 
-        self.frames_per_batch = 1000
-        self.total_frames = 10_000
+        policy_num_cells = self.train_cfg["policy"]["num_cells"]
+        value_num_cells = self.train_cfg["value"]["num_cells"]
+        lr = self.train_cfg["lr"]
+        self.max_grad_norm = self.train_cfg["max_grad_norm"]
 
-        self.sub_batch_size = 64
-        self.num_epochs = 10
-        clip_epsilon = 0.2
-        gamma = 0.99
-        lmbda = 0.95
-        entropy_eps = 1e-4
+        self.frames_per_batch = self.train_cfg["frames_per_batch"]
+        self.total_frames = self.train_cfg["total_frame"]
+
+        self.sub_batch_size =  self.train_cfg["sub_batch_size"]
+        self.num_epochs = self.train_cfg["num_epochs"]
+
+        clip_epsilon = self.train_cfg["value"]["clip_epsilon"]
+        gamma = self.train_cfg["value"]["gamma"]
+        lmbda = self.train_cfg["value"]["lmbda"]
+        entropy_eps = self.train_cfg["value"]["entropy_eps"]
 
         base_env = GymEnv("InvertedDoublePendulum-v4", device=self.device)
         self.env = TransformedEnv(
@@ -69,12 +73,13 @@ class PPO:
         print("rollout of three steps:", rollout)
         print("Shape of the rollout TensorDict:", rollout.batch_size)
 
+
         actor_net = nn.Sequential(
-            nn.LazyLinear(num_cells, device=self.device),
+            nn.LazyLinear(policy_num_cells, device=self.device),
             nn.Tanh(),
-            nn.LazyLinear(num_cells, device=self.device),
+            nn.LazyLinear(policy_num_cells, device=self.device),
             nn.Tanh(),
-            nn.LazyLinear(num_cells, device=self.device),
+            nn.LazyLinear(policy_num_cells, device=self.device),
             nn.Tanh(),
             nn.LazyLinear(2 * self.env.action_spec.shape[-1], device=self.device),
             NormalParamExtractor(),
@@ -96,11 +101,11 @@ class PPO:
         )
 
         value_net = nn.Sequential(
-            nn.LazyLinear(num_cells, device=self.device),
+            nn.LazyLinear(value_num_cells, device=self.device),
             nn.Tanh(),
-            nn.LazyLinear(num_cells, device=self.device),
+            nn.LazyLinear(value_num_cells, device=self.device),
             nn.Tanh(),
-            nn.LazyLinear(num_cells, device=self.device),
+            nn.LazyLinear(value_num_cells, device=self.device),
             nn.Tanh(),
             nn.LazyLinear(1, device=self.device),
         )
@@ -145,11 +150,11 @@ class PPO:
             self.optim, self.total_frames // self.frames_per_batch, 0.0
         )
 
-    def get_action(self, state):
-        action = 1
-        return action
+    def get_action(self, tensor_dict):
+        tensor_dict["action"] = 1
+        return tensor_dict
 
-    def push_transition(transition):
+    def push_transition(self, transition):
         a = 1
 
     def train(self):
@@ -195,30 +200,7 @@ class PPO:
             self.logs["lr"].append(self.optim.param_groups[0]["lr"])
             lr_str = f"lr policy: {self.logs['lr'][-1]: 4.4f}"
             if i % 10 == 0:
-                # We evaluate the policy once every 10 batches of data.
-                # Evaluation is rather simple: execute the policy without exploration
-                # (take the expected value of the action distribution) for a given
-                # number of steps (1000, which is our ``env`` horizon).
-                # The ``rollout`` method of the ``env`` can take a policy as argument:
-                # it will then execute this policy at each step.
-                with set_exploration_type(ExplorationType.MEAN), torch.no_grad():
-                    # execute a rollout with the trained policy
-                    eval_rollout = self.env.rollout(1000, self.policy_module)
-                    self.logs["eval reward"].append(
-                        eval_rollout["next", "reward"].mean().item()
-                    )
-                    self.logs["eval reward (sum)"].append(
-                        eval_rollout["next", "reward"].sum().item()
-                    )
-                    self.logs["eval step_count"].append(
-                        eval_rollout["step_count"].max().item()
-                    )
-                    eval_str = (
-                        f"eval cumulative reward: {self.logs['eval reward (sum)'][-1]: 4.4f} "
-                        f"(init: {self.logs['eval reward (sum)'][0]: 4.4f}), "
-                        f"eval step-count: {self.logs['eval step_count'][-1]}"
-                    )
-                    del eval_rollout
+                eval_str =  self.eval()
             pbar.set_description(
                 ", ".join([eval_str, cum_reward_str, stepcount_str, lr_str])
             )
@@ -226,6 +208,34 @@ class PPO:
             # We're also using a learning rate scheduler. Like the gradient clipping,
             # this is a nice-to-have but nothing necessary for PPO to work.
             self.scheduler.step()
+
+    def eval(self):
+        # We evaluate the policy once every 10 batches of data.
+        # Evaluation is rather simple: execute the policy without exploration
+        # (take the expected value of the action distribution) for a given
+        # number of steps (1000, which is our ``env`` horizon).
+        # The ``rollout`` method of the ``env`` can take a policy as argument:
+        # it will then execute this policy at each step.
+        with set_exploration_type(ExplorationType.MEAN), torch.no_grad():
+            # execute a rollout with the trained policy
+            eval_rollout = self.env.rollout(1000, self.policy_module)
+            self.logs["eval reward"].append(
+                eval_rollout["next", "reward"].mean().item()
+            )
+            self.logs["eval reward (sum)"].append(
+                eval_rollout["next", "reward"].sum().item()
+            )
+            self.logs["eval step_count"].append(
+                eval_rollout["step_count"].max().item()
+            )
+            eval_str = (
+                f"eval cumulative reward: {self.logs['eval reward (sum)'][-1]: 4.4f} "
+                f"(init: {self.logs['eval reward (sum)'][0]: 4.4f}), "
+                f"eval step-count: {self.logs['eval step_count'][-1]}"
+            )
+            del eval_rollout
+
+        return eval_str
 
     def plot_graph(self):
         plt.figure(figsize=(10, 10))
@@ -245,6 +255,11 @@ class PPO:
 
 
 if __name__ == "__main__":
-    ppo = PPO()
+    train_cfg_path = f"config/train/ppo.yaml"
+    import yaml
+    with open(train_cfg_path, "r") as stream:
+        train_cfg = yaml.safe_load(stream)
+
+    ppo = PPO(train_cfg)
     ppo.train()
     ppo.plot_graph()

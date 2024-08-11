@@ -26,36 +26,21 @@ from torchrl.envs import CatTensors, EnvBase, Transform, TransformedEnv
 from torchrl.envs.utils import check_env_specs, step_mdp
 
 
-def make_composite_from_td(td):
-    # custom function to convert a ``tensordict`` in a similar spec structure
-    # of unbounded values.
-    composite = CompositeSpec(
-        {
-            key: (
-                make_composite_from_td(tensor)
-                if isinstance(tensor, TensorDictBase)
-                else UnboundedContinuousTensorSpec(
-                    dtype=tensor.dtype, device=tensor.device, shape=tensor.shape
-                )
-            )
-            for key, tensor in td.items()
-        },
-        shape=td.shape,
-    )
-    return composite
 
 
 class CassiEnv(EnvBase):
-    def __init__(self, td_params=None, seed=None, device="cpu"):
+    def __init__(self, task_cfg, td_params=None, seed=None, device="cpu"):
         if td_params is None:
             td_params = self.gen_params()
         super().__init__(device=device, batch_size=[])
-        self._make_spec(td_params)
+
+        self.task_cfg = task_cfg
+
         if seed is None:
             seed = torch.empty((), dtype=torch.int64).random_().item()
         self.set_seed(seed)
-
         self.sim_setting()
+        self._make_spec(td_params)
 
         """Rest everything follows."""
 
@@ -73,9 +58,9 @@ class CassiEnv(EnvBase):
         # Load kit helper
         self.sim = SimulationContext(
             sim_utils.SimulationCfg(
-                device="cpu",
+                device=self.task_cfg["sim_params"]["sim_device"],
                 use_gpu_pipeline=False,
-                dt=0.01,
+                dt=self.task_cfg["sim_params"]["sim_dt"],
                 physx=sim_utils.PhysxCfg(use_gpu=False),
             )
         )
@@ -99,9 +84,7 @@ class CassiEnv(EnvBase):
         )
         # Robots
         self.cassie = Articulation(CASSIE_CFG.replace(prim_path="/World/Cassie"))
-        self.h1 = Articulation(H1_CFG.replace(prim_path="/World/H1"))
-        self.g1 = Articulation(G1_CFG.replace(prim_path="/World/G1"))
-        self.robots = [self.cassie, self.h1, self.g1]
+        self.robots = [self.cassie]
 
         # Play the simulator
         self.sim.reset()
@@ -113,6 +96,7 @@ class CassiEnv(EnvBase):
         self.sim_dt = self.sim.get_physics_dt()
         self.sim_time = 0.0
         self.count = 0
+        self.max_step_size = self.task_cfg["setting"]["max_step_size"]
 
     def sim_setting(self):
         # add argparse arguments
@@ -128,7 +112,13 @@ class CassiEnv(EnvBase):
         app_launcher = AppLauncher(args_cli)
         self.simulation_app = app_launcher.app
 
-    def reset(self):
+    def _reset(self, tensordict=None):
+        if tensordict is None or tensordict.is_empty():
+            # if no ``tensordict`` is passed, we generate a single set of hyperparameters
+            # Otherwise, we assume that the input ``tensordict`` contains all the relevant
+            # parameters to get started.
+            tensordict = self.gen_params(batch_size=self.batch_size)
+
         # reset counters
         self.sim_time = 0.0
         self.count = 0
@@ -143,43 +133,114 @@ class CassiEnv(EnvBase):
             root_state[:, :3] += self.origins[index]
             robot.write_root_state_to_sim(root_state)
             robot.reset()
+            out = TensorDict(
+                {
+                    "joint_pos": joint_pos,
+                    "joint_vel": joint_vel,
+                    "root_state": root_state,
+                    "params": tensordict["params"],
+                },
+                tensordict.shape,
+            )
+
         print(">>>>>>>> Reset!")
 
-    def step(self, action):
-        if self.count % 200 == 0:
-            self.reset()
+        return out
+
+    def _step(self, tensordict):
+        target_pos = tensordict["joint_pos"] + tensordict["params"]["action_scale"]* tensordict["action"]
+
         # apply action to the robot
         for robot in self.robots:
-            robot.set_joint_position_target(robot.data.default_joint_pos.clone())
+            robot.set_joint_position_target(target_pos)
             robot.write_data_to_sim()
+
         # perform step
         self.sim.step()
         # update sim-time
         self.sim_time += self.sim_dt
         self.count += 1
 
-        states = []
         # update buffers
         for robot in self.robots:
             robot.update(self.sim_dt)
+            joint_pos = robot.data.joint_pos
+            joint_vel = robot.data.joint_vel
             root_state = robot.data.default_root_state.clone()
-            states.append(root_state)
 
-        reward = self.cal_reward()
-        terminal = self.is_terminal()
+            reward = self.cal_reward()
+            done = self.is_done()
+            # done = torch.zeros_like(reward, dtype=torch.bool)
+            out = TensorDict(
+                {
+                    "joint_pos": joint_pos,
+                    "joint_vel": joint_vel,
+                    "root_state": root_state,
+                    "params": tensordict["params"],
+                    "reward": reward,
+                    "done": done,
+                },
+                tensordict.shape,
+            )
 
-        return states, reward, terminal
+        if done:
+            init_td = self._reset()
+            for key in init_td.keys():
+                out[key] = init_td[key]
+
+        return out
+    
+    def rand_step(self, tensordict):
+        tensordict["action"]=self.rand_action()
+        return self._step(tensordict)
+    
+    def rand_action(self):
+        return self.action_spec.rand()
+
+    def cal_reward(self):
+        return 1
+
+    def get_init_state(self):
+        return self.reset()
+
+    def is_done(self):
+        if self.count % self.max_step_size == 0:
+            return True
+        return False
+
+    def _set_seed(self, seed: Optional[int]):
+        rng = torch.manual_seed(seed)
+        self.rng = rng
+
+    def make_composite_from_td(self, td):
+        # custom function to convert a ``tensordict`` in a similar spec structure
+        # of unbounded values.
+        composite = CompositeSpec(
+            {
+                key: (
+                    self.make_composite_from_td(tensor)
+                    if isinstance(tensor, TensorDictBase)
+                    else UnboundedContinuousTensorSpec(
+                        dtype=tensor.dtype, device=tensor.device, shape=tensor.shape
+                    )
+                )
+                for key, tensor in td.items()
+            },
+            shape=td.shape,
+        )
+        return composite
+
 
     def _make_spec(self, td_params):
         # Under the hood, this will populate self.output_spec["observation"]
         self.observation_spec = CompositeSpec(
-            th=BoundedTensorSpec(
+            joint_pos=BoundedTensorSpec(
                 low=-torch.pi,
                 high=torch.pi,
                 shape=(),
                 dtype=torch.float32,
             ),
-            thdot=BoundedTensorSpec(
+            joint_vel=BoundedTensorSpec(
                 low=-td_params["params", "max_speed"],
                 high=td_params["params", "max_speed"],
                 shape=(),
@@ -187,7 +248,7 @@ class CassiEnv(EnvBase):
             ),
             # we need to add the ``params`` to the observation specs, as we want
             # to pass it at each step during a rollout
-            params=make_composite_from_td(td_params["params"]),
+            params=self.make_composite_from_td(td_params["params"]),
             shape=(),
         )
         # since the environment is stateless, we expect the previous output as input.
@@ -198,35 +259,10 @@ class CassiEnv(EnvBase):
         self.action_spec = BoundedTensorSpec(
             low=-td_params["params", "max_torque"],
             high=td_params["params", "max_torque"],
-            shape=(1,),
+            shape=(12,),
             dtype=torch.float32,
         )
         self.reward_spec = UnboundedContinuousTensorSpec(shape=(*td_params.shape, 1))
-
-    def cal_reward(self):
-        return 1
-
-    def get_init_state(self):
-        return 1
-
-    def is_terminal(self):
-        return 1
-
-    def _set_seed(self, seed: Optional[int]):
-        rng = torch.manual_seed(seed)
-        self.rng = rng
-
-    def observation_spec(self):
-        return 1
-
-    def action_spec(self):
-        return 1
-
-    def reward_spec(self):
-        return 1
-
-    def done_spec(self):
-        return 1
 
     def gen_params(self, g=10.0, batch_size=None) -> TensorDictBase:
         """Returns a ``tensordict`` containing the physical parameters such as gravitational force and torque or speed limits."""
@@ -237,11 +273,12 @@ class CassiEnv(EnvBase):
                 "params": TensorDict(
                     {
                         "max_speed": 8,
-                        "max_torque": 2.0,
+                        "max_torque": 1.0,
                         "dt": 0.05,
                         "g": g,
                         "m": 1.0,
                         "l": 1.0,
+                        "action_scale": 0.5,
                     },
                     [],
                 )
@@ -255,10 +292,16 @@ class CassiEnv(EnvBase):
 
 if __name__ == "__main__":
     # run the main function
+    task_cfg_path = f"config/task/cassie.yaml"
+    import yaml
+    with open(task_cfg_path, "r") as stream:
+        task_cfg = yaml.safe_load(stream)
 
-    cassie_env = CassiEnv()
+    cassie_env = CassiEnv(task_cfg)
 
+    tensor_dict = cassie_env.get_init_state()
     while cassie_env.simulation_app.is_running():
-        cassie_env.step()
+        new_tensor_dict = cassie_env.rand_step(tensor_dict)
+        tensor_dict = new_tensor_dict
     # close sim app
     cassie_env.simulation_app.close()

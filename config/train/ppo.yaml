@@ -1,0 +1,17 @@
+
+num_epochs: 10
+lr: 0.0003            # 3e-4
+frames_per_batch: 1000
+total_frame: 10000
+max_grad_norm: 1.0
+sub_batch_size: 64 
+
+policy:
+  num_cells: 256
+
+value:
+  num_cells: 256
+  clip_epsilon : 0.2
+  gamma: 0.99
+  lmbda: 0.95
+  entropy_eps: 0.0001   # 1e-4 
