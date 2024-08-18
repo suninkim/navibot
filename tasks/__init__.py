@@ -1,1 +1,1 @@
-from .cassie_env import CassiEnv
+from .cassie_env import CassieEnv, make_base_cassie_env

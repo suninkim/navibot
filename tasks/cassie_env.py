@@ -22,13 +22,17 @@ import torch
 from omni.isaac.lab.app import AppLauncher
 from tensordict import TensorDict, TensorDictBase
 from torchrl.data import BoundedTensorSpec, CompositeSpec, UnboundedContinuousTensorSpec
-from torchrl.envs import CatTensors, EnvBase, Transform, TransformedEnv
+from torchrl.envs import  EnvBase, Transform, TransformedEnv
 from torchrl.envs.utils import check_env_specs, step_mdp
 
 
+def make_base_cassie_env(tack_cfg, env_name="CassieEnv", frame_skip=1):
+    env = CassieEnv(tack_cfg)
+
+    return env
 
 
-class CassiEnv(EnvBase):
+class CassieEnv(EnvBase):
     def __init__(self, task_cfg, td_params=None, seed=None, device="cpu"):
         if td_params is None:
             td_params = self.gen_params()
@@ -57,12 +61,7 @@ class CassiEnv(EnvBase):
 
         # Load kit helper
         self.sim = SimulationContext(
-            sim_utils.SimulationCfg(
-                device=self.task_cfg["sim_params"]["sim_device"],
-                use_gpu_pipeline=False,
-                dt=self.task_cfg["sim_params"]["sim_dt"],
-                physx=sim_utils.PhysxCfg(use_gpu=False),
-            )
+            sim_utils.SimulationCfg(device=self.task_cfg["sim_params"]["sim_device"], dt=self.task_cfg["sim_params"]["sim_dt"])
         )
         # Set main camera
         self.sim.set_camera_view(eye=[3.5, 3.5, 3.5], target=[0.0, 0.0, 0.0])

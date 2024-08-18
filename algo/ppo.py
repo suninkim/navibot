@@ -253,6 +253,12 @@ class PPO:
         plt.title("Max step count (test)")
         plt.show()
 
+    def get_policy_operator(self):
+        return self.policy_module
+
+    def get_value_operator(self):
+        return self.value_module
+
 
 if __name__ == "__main__":
     train_cfg_path = f"config/train/ppo.yaml"

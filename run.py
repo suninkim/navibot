@@ -2,9 +2,9 @@ import argparse
 
 import torch
 import yaml
-from tasks import CassiEnv
-
+from tasks import CassieEnv, make_base_cassie_env
 from algo import PPO
+from torchrl.collectors import SyncDataCollector
 
 
 parser = argparse.ArgumentParser()
@@ -23,11 +23,10 @@ with open(train_cfg_path, "r") as stream:
     train_cfg = yaml.safe_load(stream)
 
 # Env
-cassie_env = CassiEnv(task_cfg)
+cassie_env = CassieEnv(task_cfg)
 
 # Agent
 agent = PPO(train_cfg, cassie_env)
-
 
 tensor_dict = cassie_env.get_init_state()
 while cassie_env.simulation_app.is_running():
