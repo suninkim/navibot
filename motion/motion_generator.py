@@ -1,12 +1,18 @@
+import time
+
+import mujoco
+import mujoco.viewer
 import numpy as np
 import ruckig
 
 
 class Controller:
-    def __init__(self):
-        a = 1
+    def __init__(self, cfg):
+        self.cfg = cfg
 
         self.num_joint = 10
+        self.control_freq = 100
+        self._configure_ruckig()
 
     def _configure_ruckig(self):
         self.rkg = {}
@@ -35,14 +41,14 @@ class Controller:
         wa_limit = self.cfg["wa_limit"]
         va_limit = self.cfg["va_limit"]
         jerk_limit = self.cfg["jerk_limit"]
-        self.rkg["T"] = ruckig.InputParameter(w_dim + v_dim)
-        self.rkg["T"].max_velocity = np.array([w_limit] * w_dim + [v_limit] * v_dim)
-        self.rkg["T"].max_acceleration = np.array(
-            [wa_limit] * w_dim + [va_limit] * v_dim
-        )
-        self.rkg["T"].max_jerk = np.array([jerk_limit] * (w_dim + v_dim))
-        self.rkg_ruckig["T"] = ruckig.Ruckig(w_dim + v_dim)
-        self.rkg_trajectory["T"] = ruckig.Trajectory(w_dim + v_dim)
+        # self.rkg["T"] = ruckig.InputParameter(w_dim + v_dim)
+        # self.rkg["T"].max_velocity = np.array([w_limit] * w_dim + [v_limit] * v_dim)
+        # self.rkg["T"].max_acceleration = np.array(
+        #     [wa_limit] * w_dim + [va_limit] * v_dim
+        # )
+        # self.rkg["T"].max_jerk = np.array([jerk_limit] * (w_dim + v_dim))
+        # self.rkg_ruckig["T"] = ruckig.Ruckig(w_dim + v_dim)
+        # self.rkg_trajectory["T"] = ruckig.Trajectory(w_dim + v_dim)
 
     def generate_traj(
         self, space: str, init_pos, init_vel, final_pos, final_vel, min_duration
@@ -50,7 +56,8 @@ class Controller:
         if space == "T":
             n_dim = 6
         elif space == "joint":
-            n_dim = len(self.robot.motors)
+            # n_dim = len(self.robot.motors)
+            n_dim = self.num_joint
         else:
             raise Exception(f"Invalid space={space}, self.rkg.keys()={self.rkg.keys()}")
         # log_assert(
@@ -97,3 +104,91 @@ class Controller:
             np.vstack(pos_traj),
             np.vstack(vel_traj),
         )
+
+
+paused = False
+
+
+def key_callback(keycode):
+    if chr(keycode) == " ":
+        global paused
+        paused = not paused
+
+
+if __name__ == "__main__":
+
+    m = mujoco.MjModel.from_xml_path("../assets/robots/mjcf_navi/navi.xml")
+    d = mujoco.MjData(m)
+
+    control_cfg = {
+        "w_limit": [1.0] * 10,
+        "v_limit": [1.0] * 10,
+        "wa_limit": [1.0] * 10,
+        "va_limit": [1.0] * 10,
+        "jerk_limit": [1.0] * 10,
+        "joint_vel_limit": [1.0] * 10,
+        "joint_acc_limit": [1.0] * 10,
+        "joint_jerk_limit": [1.0] * 10,
+    }
+
+    controller = Controller(control_cfg)
+
+    init_qpos = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    final_qpos = [0, 0, 1, 0.78, 0.22, 0, 0, 1, 0.78, 0.22]
+
+    result = controller.generate_traj(
+        "joint", init_qpos, init_qpos, final_qpos, init_qpos, min_duration=10
+    )
+    print(len(result[1][0]))
+    cnt = 0
+    forward = False
+    with mujoco.viewer.launch_passive(m, d, key_callback=key_callback) as viewer:
+        # Close the viewer automatically after 30 wall-seconds.
+        start = time.time()
+        while viewer.is_running() and time.time() - start < 30:
+            step_start = time.time()
+
+            # mj_step can be replaced with code that also evaluates
+            # a policy and applies a control signal before stepping the physics.
+            print(f"d.qpos[:]: {d.qpos[:]}")
+            print(f"result[cnt][:]: {result[1][cnt]} ")
+            d.qpos[:] = result[1][cnt]
+            if cnt < 999:
+                cnt += 1
+            else:
+                if not forward:
+                    result = controller.generate_traj(
+                        "joint",
+                        init_qpos,
+                        init_qpos,
+                        final_qpos,
+                        init_qpos,
+                        min_duration=10,
+                    )
+                else:
+                    result = controller.generate_traj(
+                        "joint",
+                        final_qpos,
+                        init_qpos,
+                        init_qpos,
+                        init_qpos,
+                        min_duration=10,
+                    )
+                forward = not forward
+                cnt = 0
+            if not paused:
+                mujoco.mj_step(m, d)
+                # Pick up changes to the physics state, apply perturbations, update options from GUI.
+                viewer.sync()
+
+            # print(m.names)
+            # print(len(d.qpos))
+            # print(d.joint("joint_left_leg1"))
+            # Example modification of a viewer option: toggle contact points every two seconds.
+            with viewer.lock():
+                viewer.opt.flags[mujoco.mjtVisFlag.mjVIS_CONTACTPOINT] = int(d.time % 2)
+
+            # Rudimentary time keeping, will drift relative to wall clock.
+            time_until_next_step = m.opt.timestep - (time.time() - step_start)
+            if time_until_next_step > 0:
+                time.sleep(time_until_next_step)
