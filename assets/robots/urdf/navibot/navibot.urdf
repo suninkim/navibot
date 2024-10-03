@@ -1,0 +1,357 @@
+<?xml version="1.0" ?>
+<robot name="navibot">
+   <link name="base">
+      <inertial>
+         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+         <mass value="0.71452"/>
+         <inertia ixx="0.000001" iyy="0.0000001" izz="0.000001" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+      <visual name="base">
+         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+         <geometry>
+            <mesh filename="meshes/navibot_base.stl"/>
+         </geometry>
+         <material name="white"/>
+      </visual>
+      <collision>
+         <geometry>
+            <cylinder length="0.05" radius="0.03"/>
+         </geometry>
+         <origin xyz="0.0 0.037 0.0225" rpy="0 0 0"/>
+         <contact_coefficients mu="1" kp="1000.0" kd="1.0"/>
+      </collision>
+      <collision>
+         <geometry>
+            <cylinder length="0.05" radius="0.03"/>
+         </geometry>
+         <origin xyz="0.0 -0.037 0.0225" rpy="0 0 0"/>
+         <contact_coefficients mu="1" kp="1000.0" kd="1.0"/>
+      </collision>
+   </link>
+   <link name="hip_left">
+      <inertial>
+         <origin xyz="0.0 -0.037 0.0" rpy="0.0 0.0  0.0"/>
+         <mass value="0.34969"/>
+         <inertia ixx="0.1" iyy="0.1" izz="0.1" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+      <visual name="hip_left">
+         <origin xyz="0.0 -0.037 0.0" rpy="0.0 0.0 0.0"/>
+         <geometry>
+            <mesh filename="meshes/navibot_hip_left.stl"/>
+         </geometry>
+         <material name="white"/>
+      </visual>
+      <collision>
+         <geometry>
+            <cylinder length="0.05" radius="0.03"/>
+         </geometry>
+         <origin xyz="0.0 0.0 -0.05" rpy="0 1.5707963267948966 0"/>
+         <contact_coefficients mu="1" kp="1000.0" kd="1.0"/>
+      </collision>
+   </link>
+   <joint type="revolute" name="joint_hip_left">
+      <parent link="base"/>
+      <child link="hip_left"/>
+      <origin xyz="0.0 0.037 0.0" rpy="0.0 0.0 0.0"/>
+      <axis xyz="0.0 0.0 1.0"/>
+      <limit lower="-0.785398" upper="0.785398" effort="100" velocity="100"/>
+   </joint>
+   <link name="thigh_left">
+      <inertial>
+         <origin xyz="0.0 -0.037 0.05" rpy="0.0 0.0  0.0"/>
+         <mass value="0.04701"/>
+         <inertia ixx="0.1" iyy="0.1" izz="0.1" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+      <visual name="thigh_left">
+         <origin xyz="0.0 -0.037 0.05" rpy="0.0 0.0 0.0"/>
+         <geometry>
+            <mesh filename="meshes/navibot_thigh_left.stl"/>
+         </geometry>
+         <material name="white"/>
+      </visual>
+   </link>
+   <joint type="revolute" name="joint_thigh_left">
+      <parent link="hip_left"/>
+      <child link="thigh_left"/>
+      <origin xyz="0.0 0.0 -0.05" rpy="0.0 0.0 0.0"/>
+      <axis xyz="1.0 0.0 0.0"/>
+      <limit lower="-0.872665" upper="0.174533" effort="100" velocity="100"/>
+   </joint>
+   <link name="knee_left">
+      <inertial>
+         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0  0.0"/>
+         <mass value="0.83451"/>
+         <inertia ixx="0.1" iyy="0.1" izz="0.1" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+      <visual name="knee_left">
+         <origin xyz="0.0 -0.087 0.05" rpy="0.0 0.0 0.0"/>
+         <geometry>
+            <mesh filename="meshes/navibot_knee_left.stl"/>
+         </geometry>
+         <material name="white"/>
+      </visual>
+      <collision>
+         <geometry>
+            <cylinder length="0.04" radius="0.04"/>
+         </geometry>
+         <origin xyz="0.0 0.005 0.0" rpy="1.5707963267948966 0 0"/>
+         <contact_coefficients mu="1" kp="1000.0" kd="1.0"/>
+      </collision>
+      <collision>
+         <geometry>
+            <cylinder length="0.04" radius="0.04"/>
+         </geometry>
+         <origin xyz="0.0 0.005 -0.1" rpy="1.5707963267948966 0 0"/>
+         <contact_coefficients mu="1" kp="1000.0" kd="1.0"/>
+      </collision>
+   </link>
+   <joint type="revolute" name="joint_knee_left">
+      <parent link="thigh_left"/>
+      <child link="knee_left"/>
+      <origin xyz="0.0 0.05 0.0" rpy="0.0 0.0 0.0"/>
+      <axis xyz="0.0 1.0 0.0"/>
+      <limit lower="-1.5707963267948966" upper="1.5707963267948966" effort="100" velocity="100"/>
+   </joint>
+   <link name="shin_left">
+      <inertial>
+         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0  0.0"/>
+         <mass value="0.46550"/>
+         <inertia ixx="0.1" iyy="0.1" izz="0.1" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+      <visual name="shin_left">
+         <origin xyz="0.0 -0.087 0.15" rpy="0.0 0.0 0.0"/>
+         <geometry>
+            <mesh filename="meshes/navibot_shin_left.stl"/>
+         </geometry>
+         <material name="white"/>
+      </visual>
+      <collision>
+         <geometry>
+            <cylinder length="0.04" radius="0.04"/>
+         </geometry>
+         <origin xyz="0.0 0.005 -0.1" rpy="1.5707963267948966 0 0"/>
+         <contact_coefficients mu="1" kp="1000.0" kd="1.0"/>
+      </collision>
+   </link>
+   <joint type="revolute" name="joint_shin_left">
+      <parent link="knee_left"/>
+      <child link="shin_left"/>
+      <origin xyz="0.0 0.0 -0.1" rpy="0.0 0.0 0.0"/>
+      <axis xyz="0.0 1.0 0.0"/>
+      <limit lower="-1.5707963267948966" upper="0" effort="100" velocity="100"/>
+   </joint>
+   <link name="toe_left">
+      <inertial>
+         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0  0.0"/>
+         <mass value="0.22506"/>
+         <inertia ixx="0.1" iyy="0.1" izz="0.1" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+      <visual name="toe_left">
+         <origin xyz="0.0 -0.087 0.25" rpy="0.0 0.0 0.0"/>
+         <geometry>
+            <mesh filename="meshes/navibot_toe_left.stl"/>
+         </geometry>
+         <material name="white"/>
+      </visual>
+      <collision>
+         <geometry>
+            <cylinder length="0.16" radius="0.005"/>
+         </geometry>
+         <origin xyz="0.02 0.023 -0.08" rpy="0 1.5707963267948966 0"/>
+         <contact_coefficients mu="1" kp="1000.0" kd="1.0"/>
+      </collision>
+      <collision>
+         <geometry>
+            <cylinder length="0.16" radius="0.005"/>
+         </geometry>
+         <origin xyz="0.02 -0.017 -0.08" rpy="0 1.5707963267948966 0"/>
+         <contact_coefficients mu="1" kp="1000.0" kd="1.0"/>
+      </collision>
+   </link>
+   <joint type="revolute" name="joint_toe_left">
+      <parent link="shin_left"/>
+      <child link="toe_left"/>
+      <origin xyz="0.0 0.0 -0.1" rpy="0.0 0.0 0.0"/>
+      <axis xyz="0.0 1.0 0.0"/>
+      <limit lower="-1.39626" upper="1.13446" effort="100" velocity="100"/>
+   </joint>
+   <link name="hip_right">
+      <inertial>
+         <origin xyz="0.0 0.037 0.0" rpy="0.0 0.0  0.0"/>
+         <mass value="0.34969"/>
+         <inertia ixx="0.1" iyy="0.1" izz="0.1" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+      <visual name="hip_right">
+         <origin xyz="0.0 0.037 0.0" rpy="0.0 0.0 0.0"/>
+         <geometry>
+            <mesh filename="meshes/navibot_hip_right.stl"/>
+         </geometry>
+         <material name="white"/>
+      </visual>
+      <collision>
+         <geometry>
+            <cylinder length="0.05" radius="0.03"/>
+         </geometry>
+         <origin xyz="0.0 0.0 -0.05" rpy="0 1.5707963267948966 0"/>
+         <contact_coefficients mu="1" kp="1000.0" kd="1.0"/>
+      </collision>
+   </link>
+   <joint type="revolute" name="joint_hip_right">
+      <parent link="base"/>
+      <child link="hip_right"/>
+      <origin xyz="0.0 -0.037 0.0" rpy="0.0 0.0 0.0"/>
+      <axis xyz="0.0 0.0 1.0"/>
+      <limit lower="-0.785398" upper="0.785398" effort="100" velocity="100"/>
+   </joint>
+   <link name="thigh_right">
+      <inertial>
+         <origin xyz="0.0 0.037 0.05" rpy="0.0 0.0  0.0"/>
+         <mass value="0.04701"/>
+         <inertia ixx="0.1" iyy="0.1" izz="0.1" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+      <visual name="thigh_right">
+         <origin xyz="0.0 0.037 0.05" rpy="0.0 0.0 0.0"/>
+         <geometry>
+            <mesh filename="meshes/navibot_thigh_right.stl"/>
+         </geometry>
+         <material name="white"/>
+      </visual>
+   </link>
+   <joint type="revolute" name="joint_thigh_right">
+      <parent link="hip_right"/>
+      <child link="thigh_right"/>
+      <origin xyz="0.0 0.0 -0.05" rpy="0.0 0.0 0.0"/>
+      <axis xyz="-1.0 0.0 0.0"/>
+      <limit lower="-0.872665" upper="0.174533" effort="100" velocity="100"/>
+   </joint>
+   <link name="knee_right">
+      <inertial>
+         <origin xyz="0.0 0.087 0.05" rpy="0.0 0.0  0.0"/>
+         <mass value="0.83451"/>
+         <inertia ixx="0.1" iyy="0.1" izz="0.1" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+      <visual name="knee_right">
+         <origin xyz="0.0 0.087 0.05" rpy="0.0 0.0 0.0"/>
+         <geometry>
+            <mesh filename="meshes/navibot_knee_right.stl"/>
+         </geometry>
+         <material name="white"/>
+      </visual>
+      <collision>
+         <geometry>
+            <cylinder length="0.04" radius="0.04"/>
+         </geometry>
+         <origin xyz="0.0 -0.005 0.0" rpy="1.5707963267948966 0 0"/>
+         <contact_coefficients mu="1" kp="1000.0" kd="1.0"/>
+      </collision>
+      <collision>
+         <geometry>
+            <cylinder length="0.04" radius="0.04"/>
+         </geometry>
+         <origin xyz="0.0 -0.005 -0.1" rpy="1.5707963267948966 0 0"/>
+         <contact_coefficients mu="1" kp="1000.0" kd="1.0"/>
+      </collision>
+   </link>
+   <joint type="revolute" name="joint_knee_right">
+      <parent link="thigh_right"/>
+      <child link="knee_right"/>
+      <origin xyz="0.0 -0.05 0.0" rpy="0.0 0.0 0.0"/>
+      <axis xyz="0.0 -1.0 0.0"/>
+      <limit lower="-1.5707963267948966" upper="1.5707963267948966" effort="100" velocity="100"/>
+   </joint>
+   <link name="shin_right">
+      <inertial>
+         <origin xyz="0.0 0.087 0.15" rpy="0.0 0.0  0.0"/>
+         <mass value="0.46550"/>
+         <inertia ixx="0.1" iyy="0.1" izz="0.1" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+      <visual name="shin_right">
+         <origin xyz="0.0 0.087 0.15" rpy="0.0 0.0 0.0"/>
+         <geometry>
+            <mesh filename="meshes/navibot_shin_right.stl"/>
+         </geometry>
+         <material name="white"/>
+      </visual>
+      <collision>
+         <geometry>
+            <cylinder length="0.04" radius="0.04"/>
+         </geometry>
+         <origin xyz="0.0 -0.005 -0.1" rpy="1.5707963267948966 0 0"/>
+         <contact_coefficients mu="1" kp="1000.0" kd="1.0"/>
+      </collision>
+   </link>
+   <joint type="revolute" name="joint_shin_right">
+      <parent link="knee_right"/>
+      <child link="shin_right"/>
+      <origin xyz="0.0 0.0 -0.1" rpy="0.0 0.0 0.0"/>
+      <axis xyz="0.0 -1.0 0.0"/>
+      <limit lower="0" upper="1.5707963267948966" effort="100" velocity="100"/>
+   </joint>
+   <link name="toe_right">
+      <inertial>
+         <origin xyz="0.0 0.087 0.25" rpy="0.0 0.0  0.0"/>
+         <mass value="0.22506"/>
+         <inertia ixx="0.1" iyy="0.1" izz="0.1" ixy="0" ixz="0" iyz="0"/>
+      </inertial>
+      <visual name="toe_right">
+         <origin xyz="0.0 0.087 0.25" rpy="0.0 0.0 0.0"/>
+         <geometry>
+            <mesh filename="meshes/navibot_toe_right.stl"/>
+         </geometry>
+         <material name="white"/>
+      </visual>
+      <collision>
+         <geometry>
+            <cylinder length="0.16" radius="0.005"/>
+         </geometry>
+         <origin xyz="0.02 -0.023 -0.08" rpy="0 1.5707963267948966 0"/>
+         <contact_coefficients mu="1" kp="1000.0" kd="1.0"/>
+      </collision>
+      <collision>
+         <geometry>
+            <cylinder length="0.16" radius="0.005"/>
+         </geometry>
+         <origin xyz="0.02 0.017 -0.08" rpy="0 1.5707963267948966 0"/>
+         <contact_coefficients mu="1" kp="1000.0" kd="1.0"/>
+      </collision>
+   </link>
+   <joint type="revolute" name="joint_toe_right">
+      <parent link="shin_right"/>
+      <child link="toe_right"/>
+      <origin xyz="0.0 0.0 -0.1" rpy="0.0 0.0 0.0"/>
+      <axis xyz="0.0 -1.0 0.0"/>
+      <limit lower="-1.13446" upper="1.39626" effort="100" velocity="100"/>
+   </joint>
+   <link name="head">
+      <visual name="head">
+         <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+         <geometry>
+            <mesh filename="meshes/navibot_head.stl"/>
+         </geometry>
+         <material name="transparent"/>
+      </visual>
+   </link>
+   <joint type="fixed" name="fixed_base_to_head">
+      <parent link="base"/>
+      <child link="head"/>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+   </joint>
+  <link name="vector_nav">
+    <inertial>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <mass value="0"/>
+      <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0"/>
+    </inertial>
+  </link>
+  <joint name="fixed_base_to_vector_nav" type="fixed">
+    <origin rpy="0 0 0" xyz="0 0 0.2"/>
+    <parent link="base"/>
+    <child link="vector_nav"/>
+  </joint>
+   <material name="transparent">
+      <color rgba="1 1 1 0.2"/>
+   </material>
+   <material name="white">
+      <color rgba="1 1 1 1"/>
+   </material>
+</robot>

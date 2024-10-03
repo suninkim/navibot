@@ -1,1 +1,5 @@
-from .cassie_env import CassieEnv, make_base_cassie_env
+from .manager_based import *
+
+manager_based_rl_cfg_map = {
+    # "Cassie": CassieEnvCfg,
+}

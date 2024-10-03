@@ -45,7 +45,7 @@ class PPO:
         self.frames_per_batch = self.train_cfg["frames_per_batch"]
         self.total_frames = self.train_cfg["total_frame"]
 
-        self.sub_batch_size =  self.train_cfg["sub_batch_size"]
+        self.sub_batch_size = self.train_cfg["sub_batch_size"]
         self.num_epochs = self.train_cfg["num_epochs"]
 
         clip_epsilon = self.train_cfg["value"]["clip_epsilon"]
@@ -72,7 +72,6 @@ class PPO:
         rollout = self.env.rollout(3)
         print("rollout of three steps:", rollout)
         print("Shape of the rollout TensorDict:", rollout.batch_size)
-
 
         actor_net = nn.Sequential(
             nn.LazyLinear(policy_num_cells, device=self.device),
@@ -200,7 +199,7 @@ class PPO:
             self.logs["lr"].append(self.optim.param_groups[0]["lr"])
             lr_str = f"lr policy: {self.logs['lr'][-1]: 4.4f}"
             if i % 10 == 0:
-                eval_str =  self.eval()
+                eval_str = self.eval()
             pbar.set_description(
                 ", ".join([eval_str, cum_reward_str, stepcount_str, lr_str])
             )
@@ -225,9 +224,7 @@ class PPO:
             self.logs["eval reward (sum)"].append(
                 eval_rollout["next", "reward"].sum().item()
             )
-            self.logs["eval step_count"].append(
-                eval_rollout["step_count"].max().item()
-            )
+            self.logs["eval step_count"].append(eval_rollout["step_count"].max().item())
             eval_str = (
                 f"eval cumulative reward: {self.logs['eval reward (sum)'][-1]: 4.4f} "
                 f"(init: {self.logs['eval reward (sum)'][0]: 4.4f}), "
@@ -263,6 +260,7 @@ class PPO:
 if __name__ == "__main__":
     train_cfg_path = f"config/train/ppo.yaml"
     import yaml
+
     with open(train_cfg_path, "r") as stream:
         train_cfg = yaml.safe_load(stream)
 

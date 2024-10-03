@@ -1,0 +1,18 @@
+<mujoco>
+    <asset>
+        <mesh name="top_base" file="top_base.STL" />
+        <mesh name="GSA_motor" file="GSA_motor.STL" />
+        <mesh name="leg1" file="leg1.STL" />
+        <mesh name="leg2" file="leg2.STL" />
+        <mesh name="leg3" file="leg3.STL" />
+        <mesh name="foot" file="foot.STL" />
+        <mesh name="sole" file="sole.STL" />
+        
+        <texture type="skybox" builtin="gradient" rgb1=".3 .5 .7" rgb2="0 0 0" width="512" height="512"/>
+        <texture name="grid" type="2d" builtin="checker" width="512" height="512" rgb1=".1 .2 .3" rgb2=".2 .3 .4"/>
+        <material name="grid" texture="grid" texrepeat="1 1" texuniform="true" reflectance=".2"/>
+      </asset>
+</mujoco>
+
+
+

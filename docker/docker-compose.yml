@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+    isaac-sim:
+        image: isaac-sim-custom # Dockerfile을 통해 빌드한 이미지 이름 사용
+        runtime: nvidia
+        environment:
+            ACCEPT_EULA: "Y"
+            PRIVACY_CONSENT: "Y"
+            DISPLAY: "${DISPLAY}"
+            QT_X11_NO_MITSHM: "1"
+            NVIDIA_DRIVER_CAPABILITIES: "all"
+        volumes:
+            - /tmp/.X11-unix:/tmp/.X11-unix:rw
+            - ${HOME}/.Xauthority:/root/.Xauthority:rw
+            - ${HOME}/docker/isaac-sim/cache/kit:/isaac-sim/kit/cache:rw
+            - ${HOME}/docker/isaac-sim/cache/ov:/root/.cache/ov:rw
+            - ${HOME}/docker/isaac-sim/cache/pip:/root/.cache/pip:rw
+            - ${HOME}/docker/isaac-sim/cache/glcache:/root/.cache/nvidia/GLCache:rw
+            - ${HOME}/docker/isaac-sim/cache/computecache:/root/.nv/ComputeCache:rw
+            - ${HOME}/docker/isaac-sim/logs:/root/.nvidia-omniverse/logs:rw
+            - ${HOME}/docker/isaac-sim/data:/root/.local/share/ov/data:rw
+            - ${HOME}/docker/isaac-sim/documents:/root/Documents:rw
+        network_mode: host
+        shm_size: '16g'

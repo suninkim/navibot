@@ -2,10 +2,9 @@ import argparse
 
 import torch
 import yaml
-from tasks import CassieEnv, make_base_cassie_env
-from algo import PPO
-from torchrl.collectors import SyncDataCollector
 
+from algo import PPO
+from tasks import CassieEnv, make_base_cassie_env
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--task_cfg", type=str, default="cassie")
@@ -32,7 +31,7 @@ tensor_dict = cassie_env.get_init_state()
 while cassie_env.simulation_app.is_running():
     action = agent.get_action(tensor_dict)
 
-    tensor_dict["action"] = cassie_env.rand_action()    # to check
+    tensor_dict["action"] = cassie_env.rand_action()  # to check
     new_tensor_dict = cassie_env.step(tensor_dict)
     agent.push_transition(tensor_dict)
     tensor_dict = new_tensor_dict
